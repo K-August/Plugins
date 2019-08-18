@@ -6,6 +6,7 @@ using UnityEngine;
 namespace Oxide.Plugins
 {
     [Info("Admin Fix", "August", "1.1.4")]
+    [Description("Logs suspicious admin behavior to discord")]
 
     internal class AdminFix : RustPlugin
     {
