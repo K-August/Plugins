@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Admin Fix", "August", "1.0.2")]
+    [Info("Admin Fix", "August", "1.0.3")]
 
     internal class AdminFix : RustPlugin
     {
@@ -70,7 +70,7 @@ namespace Oxide.Plugins
             {
                 if (p.IsAdmin)
                 {
-                    EditAdminList(p, IsGod(p));
+                    EditAdminList(p, p.IsImmortal());
                 }
             }
 
@@ -79,7 +79,7 @@ namespace Oxide.Plugins
             {
                 foreach (var admin in OnlineAdmins)
                 {
-                    GodChanged(admin, IsGod(admin));
+                    GodChanged(admin, admin.IsImmortal());
                 }
             });
         }
@@ -91,7 +91,7 @@ namespace Oxide.Plugins
         {
             if (p.IsAdmin)
             {
-                EditAdminList(p, IsGod(p));
+                EditAdminList(p, p.IsImmortal());
             }
         }
 
@@ -110,7 +110,7 @@ namespace Oxide.Plugins
 
             if (victim == null) {return null;}
             
-            if (IsGod(attacker))
+            if (attacker.IsImmortal())
             {
                 OnAdminAttackInGM(attacker, victim);
                 return false;
@@ -123,16 +123,12 @@ namespace Oxide.Plugins
         {
             if (!p.IsAdmin) {return true;}
             
-            return !(IsGod(p));
+            return !(p.IsImmortal());
         }
         
         #endregion
         
         #region God Mode
-        private static bool IsGod(BasePlayer player)
-        {
-            return (player.net.connection.info.GetBool("global.god"));
-        }
 
         private void EditAdminList(BasePlayer player, bool result, bool add = true)
         {
@@ -154,7 +150,7 @@ namespace Oxide.Plugins
             {
                 PrintWarning($"{player.displayName}/{player.userID} has changed their god mode status to {result} within the last {config.Interval} seconds!");
                 
-                OnGodmodeRecentlyToggled(player, IsGod(player));
+                OnGodmodeRecentlyToggled(player, player.IsImmortal());
                 
                 Godmode[player] = result;
             }
