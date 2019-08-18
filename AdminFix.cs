@@ -1,11 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 using Oxide.Core.Libraries;
 using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Admin Fix", "August", "1.0.3")]
+    [Info("Admin Fix", "August", "1.1.4")]
 
     internal class AdminFix : RustPlugin
     {
@@ -89,10 +89,7 @@ namespace Oxide.Plugins
 
         private void OnPlayerInit(BasePlayer p)
         {
-            if (p.IsAdmin)
-            {
-                EditAdminList(p, p.IsImmortal());
-            }
+            if (p.IsAdmin) { EditAdminList(p, p.IsImmortal()); }
         }
 
         private void OnPlayerDisconnected(BasePlayer p, string reason)
@@ -108,20 +105,19 @@ namespace Oxide.Plugins
             
             BasePlayer victim = info?.HitEntity as BasePlayer;
 
-            if (victim == null) {return null;}
-            
+            if (victim == null || victim.IsNpc) {return null;}
+
             if (attacker.IsImmortal())
             {
                 OnAdminAttackInGM(attacker, victim);
                 return false;
             }
-
             return null;
         }
         
-        private bool CanBeTargeted(BasePlayer p, MonoBehaviour behaviour)
+        private object CanBeTargeted(BasePlayer p, MonoBehaviour behaviour)
         {
-            if (!p.IsAdmin) {return true;}
+            if (!p.IsAdmin) {return null;}
             
             return !(p.IsImmortal());
         }
@@ -136,11 +132,20 @@ namespace Oxide.Plugins
             {
                 OnlineAdmins.Add(player);
                 Godmode.Add(player, result);  
+                
+                Subscribe(nameof(OnPlayerAttack));
+                Subscribe(nameof(CanBeTargeted));
             }
             else
             {
                 OnlineAdmins.Remove(player);
                 Godmode.Remove(player);
+            }
+
+            if (OnlineAdmins.Count == 0)
+            {
+                Unsubscribe(nameof(OnPlayerAttack));
+                Unsubscribe(nameof(CanBeTargeted));
             }
         }
         
@@ -174,8 +179,9 @@ namespace Oxide.Plugins
             
             if (Offenses[player] >= config.AttacksBefore && Offenses[player] % 5 == 0)
             {
-                SendDiscordMessage($"```[Admin Fix]: {player.displayName}/{player.UserIDString} tried to attack while in god mode. \n" +
-                                   $"\nThey have done this {Offenses[player]} times.```");
+                SendDiscordMessage($"```[Admin Fix]: {player.displayName}/{player.UserIDString} tried to attack {victim.displayName}/{victim.UserIDString} while in god mode. \n" +
+                                   $"\nThey have done this {Offenses[player]} times. \n" +
+                                   $"\nVictim Position: {victim.transform.position}```");
             }
             else
             {
