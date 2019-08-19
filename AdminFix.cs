@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Newtonsoft.Json;
+using Oxide.Core;
 using Oxide.Core.Libraries;
 using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Admin Fix", "August", "1.1.4")]
-    [Description("Logs suspicious admin behavior to discord")]
+    [Info("Admin Fix", "August", "1.2.5")]
 
     internal class AdminFix : RustPlugin
     {
@@ -44,6 +44,9 @@ namespace Oxide.Plugins
 
             [JsonProperty("Number of attacks admin can try before being kicked.")]
             public int AttackCount { get; set; } = 15;
+
+            [JsonProperty("Log when admins un/vanish")]
+            public bool LogVanish { get; set; } = true;
         }
 
         private void SaveConfig()
@@ -64,6 +67,17 @@ namespace Oxide.Plugins
             
             if (!config.CanTargetGodmodeAdmin) { Unsubscribe(nameof(CanBeTargeted)); }
             else { Subscribe(nameof(CanBeTargeted)); }
+
+            if (!config.LogVanish)
+            {
+                Unsubscribe(nameof(OnVanishDisappear));
+                Unsubscribe(nameof(OnVanishReappear));
+            }
+            else
+            {
+                Subscribe(nameof(OnVanishDisappear));
+                Subscribe(nameof(OnVanishReappear));
+            }
 
             SaveConfig();
             
@@ -168,6 +182,14 @@ namespace Oxide.Plugins
         {
             SendDiscordMessage($"`[Admin Fix]: {player.displayName}/{player.UserIDString} toggled god mode to {newState} in the last {config.Interval} seconds`");
         }
+
+        private void OnVanishDisappear(BasePlayer player) =>
+            SendDiscordMessage(
+                $"`[Admin Fix]: {player.displayName}/{player.UserIDString} vanished at position {player.transform.position}`");
+        
+        private void OnVanishReappear(BasePlayer player) =>
+            SendDiscordMessage(
+                $"`[Admin Fix]: {player.displayName}/{player.UserIDString} unvanished at position {player.transform.position}`");
 
         private void OnAdminAttackInGM(BasePlayer player, BasePlayer victim)
         {
