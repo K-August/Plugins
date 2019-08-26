@@ -1,17 +1,14 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Oxide.Core;
 using Oxide.Core.Libraries;
-using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Admin Fix", "August", "1.2.5")]
+    [Info("Admin Fix", "August", "1.2.6")]
 
     internal class AdminFix : RustPlugin
     {
         #region Initialization/Configuration
-
         private const string Perm = "adminfix.override";
         private List<BasePlayer> OnlineAdmins = new List<BasePlayer>();
         private Dictionary<BasePlayer, bool> Godmode = new Dictionary<BasePlayer, bool>();
@@ -33,9 +30,6 @@ namespace Oxide.Plugins
             [JsonProperty("Cancel attack if admin is in God Mode")]
             public bool CancelAttack { get; set; } = true;
 
-            [JsonProperty("Autoturrets do not toggle admins in god mode")]
-            public bool CanTargetGodmodeAdmin { get; set; } = true;
-
             [JsonProperty("How many times admins can attack (while in GM) before being logged to discord?")]
             public int AttacksBefore { get; set; } = 10;
             
@@ -48,7 +42,7 @@ namespace Oxide.Plugins
             [JsonProperty("Log when admins un/vanish")]
             public bool LogVanish { get; set; } = true;
         }
-
+        
         private void SaveConfig()
         {
             Config.WriteObject(config, true);
@@ -64,9 +58,6 @@ namespace Oxide.Plugins
             
             if (!config.CancelAttack) { Unsubscribe(nameof(OnPlayerAttack)); }
             else { Subscribe(nameof(OnPlayerAttack)); }
-            
-            if (!config.CanTargetGodmodeAdmin) { Unsubscribe(nameof(CanBeTargeted)); }
-            else { Subscribe(nameof(CanBeTargeted)); }
 
             if (!config.LogVanish)
             {
@@ -129,14 +120,7 @@ namespace Oxide.Plugins
             }
             return null;
         }
-        
-        private object CanBeTargeted(BasePlayer p, MonoBehaviour behaviour)
-        {
-            if (!p.IsAdmin) {return null;}
-            
-            return !(p.IsImmortal());
-        }
-        
+
         #endregion
         
         #region God Mode
@@ -149,7 +133,6 @@ namespace Oxide.Plugins
                 Godmode.Add(player, result);  
                 
                 Subscribe(nameof(OnPlayerAttack));
-                Subscribe(nameof(CanBeTargeted));
             }
             else
             {
@@ -160,7 +143,6 @@ namespace Oxide.Plugins
             if (OnlineAdmins.Count == 0)
             {
                 Unsubscribe(nameof(OnPlayerAttack));
-                Unsubscribe(nameof(CanBeTargeted));
             }
         }
         
